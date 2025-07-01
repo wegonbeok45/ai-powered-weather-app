@@ -14,13 +14,6 @@ interface WeatherData {
   description: string;
   city: string;
   icon: string;
-  humidity: number;
-  windSpeed: number;
-  windDirection: number;
-  uvIndex: number | null;
-  feelsLike: number;
-  pressure: number;
-  visibility: number;
 }
 
 export default function Index() {
