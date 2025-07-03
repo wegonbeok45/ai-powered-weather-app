@@ -1,5 +1,5 @@
 // Index.tsx (Main component)
-import { Text, View, TouchableOpacity, ImageBackground } from "react-native";
+import { Text, View, TouchableOpacity, ImageBackground, Alert } from "react-native";
 import { useState, useRef, useEffect } from "react";
 import HomeScreen from "./components/HomeScreen";
 import SettingsPanel from "./components/SettingsPanel";
@@ -7,6 +7,35 @@ import AboutScreen from "./components/AboutScreen";
 import WeatherCard from "./components/Weather";
 import WeatherStats from "./components/WeatherStats";
 import { fetchWeather } from "./fetchWeather";
+import { getCurrentLocation, reverseGeocode } from "my-app\services\LocationServices.js";
+
+export async function getCurrentLocation(): Promise<{ latitude: number; longitude: number }> {
+  // Dummy implementation; replace with real geolocation logic as needed
+  return new Promise((resolve, reject) => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => reject(error)
+      );
+    } else {
+      reject(new Error("Geolocation is not supported by this browser."));
+    }
+  });
+}
+
+export async function reverseGeocode(
+  latitude: number,
+  longitude: number
+): Promise<{ city?: string; subregion?: string; region?: string }> {
+  // Dummy implementation; replace with real reverse geocoding logic as needed
+  // For now, just return a fake city for demonstration
+  return { city: "London" };
+};
 import "./globals.css";
 
 interface WeatherData {
@@ -14,6 +43,12 @@ interface WeatherData {
   description: string;
   city: string;
   icon: string;
+  humidity: number;
+  windSpeed: number;
+  windDirection: string;
+  uvIndex: number;
+  pressure: number;
+  visibility: number;
 }
 
 export default function Index() {
@@ -25,6 +60,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentCity, setCurrentCity] = useState("London"); // Default city
+  const [locationLoading, setLocationLoading] = useState(false);
   
   const openHomeScreen = () => setShowHome(true);
   const closeHomeScreen = () => setShowHome(false);
@@ -61,6 +97,47 @@ export default function Index() {
     }
   };
 
+  // NEW: Load weather data using coordinates
+  const loadWeatherByCoords = async (latitude: number, longitude: number) => {
+    try {
+      setLoading(true);
+      setError(null);
+      // You'll need to modify fetchWeather to accept coordinates
+      // For now, let's get the city name and use that
+      const address = await reverseGeocode(latitude, longitude);
+      const cityName = address.city || address.subregion || address.region;
+      
+      if (cityName) {
+        const data = await fetchWeather(cityName);
+        setWeatherData(data);
+        setCurrentCity(cityName);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load weather data');
+      console.error('Weather fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // NEW: Get current location weather
+  const getCurrentLocationWeather = async () => {
+    try {
+      setLocationLoading(true);
+      const coords = await getCurrentLocation();
+      await loadWeatherByCoords(coords.latitude, coords.longitude);
+    } catch (error) {
+      console.error('Location error:', error);
+      Alert.alert(
+        'Location Error', 
+        'Unable to get your location. Please make sure location services are enabled.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
   const handleGenerate = () => {
     setBackgroundIndex((prev) => (prev + 1) % backgrounds.length);
   };
@@ -72,6 +149,9 @@ export default function Index() {
       setTimeout(() => {
         openAboutScreen();
       }, 300);
+    } else if (option === 'Use My Location') {
+      closeSettingsPanel();
+      getCurrentLocationWeather();
     } else {
       closeSettingsPanel();
     }
@@ -117,6 +197,17 @@ export default function Index() {
             </TouchableOpacity>
           </View>
 
+          {/* NEW: Location button */}
+          <TouchableOpacity 
+            className="bg-white/10 border border-white/20 rounded-2xl p-3 backdrop-blur-sm active:scale-95 mr-2"
+            onPress={getCurrentLocationWeather}
+            disabled={locationLoading}
+          >
+            <Text className="text-white text-sm font-medium">
+              {locationLoading ? '📍...' : '📍'}
+            </Text>
+          </TouchableOpacity>
+
           <TouchableOpacity 
             className="bg-white/10 border border-white/20 rounded-2xl p-3 backdrop-blur-sm active:scale-95"
             onPress={openAboutScreen}
@@ -131,10 +222,10 @@ export default function Index() {
         <WeatherCard 
           onGenerate={handleGenerate}
           weatherData={weatherData}
-          loading={loading}
+          loading={loading || locationLoading}
           error={error}
         />
-        <WeatherStats weatherData={weatherData} loading={loading} />
+        <WeatherStats weatherData={weatherData} loading={loading || locationLoading} />
       </View>
 
       <View className="h-1 bg-gradient-to-r from-purple-500 via-cyan-500 to-purple-500"></View>
