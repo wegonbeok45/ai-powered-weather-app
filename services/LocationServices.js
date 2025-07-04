@@ -2,14 +2,12 @@ import * as Location from 'expo-location';
 
 export const getCurrentLocation = async () => {
   try {
-    // Request permission
     const { status } = await Location.requestForegroundPermissionsAsync();
     
     if (status !== 'granted') {
       throw new Error('Location permission denied');
     }
 
-    // Get current position
     const location = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Balanced,
     });
@@ -25,12 +23,8 @@ export const getCurrentLocation = async () => {
 
 export const reverseGeocode = async (latitude, longitude) => {
   try {
-    const result = await Location.reverseGeocodeAsync({
-      latitude,
-      longitude,
-    });
-    
-    return result[0]; // Returns city, region, country info
+    const result = await Location.reverseGeocodeAsync({ latitude, longitude });
+    return result[0];
   } catch (error) {
     throw error;
   }

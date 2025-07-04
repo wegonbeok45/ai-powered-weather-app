@@ -7,35 +7,7 @@ import AboutScreen from "./components/AboutScreen";
 import WeatherCard from "./components/Weather";
 import WeatherStats from "./components/WeatherStats";
 import { fetchWeather } from "./fetchWeather";
-import { getCurrentLocation, reverseGeocode } from "my-app\services\LocationServices.js";
-
-export async function getCurrentLocation(): Promise<{ latitude: number; longitude: number }> {
-  // Dummy implementation; replace with real geolocation logic as needed
-  return new Promise((resolve, reject) => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-        },
-        (error) => reject(error)
-      );
-    } else {
-      reject(new Error("Geolocation is not supported by this browser."));
-    }
-  });
-}
-
-export async function reverseGeocode(
-  latitude: number,
-  longitude: number
-): Promise<{ city?: string; subregion?: string; region?: string }> {
-  // Dummy implementation; replace with real reverse geocoding logic as needed
-  // For now, just return a fake city for demonstration
-  return { city: "London" };
-};
+import { getCurrentLocation, reverseGeocode, checkLocationPermission } from "./services/LocationServices";
 import "./globals.css";
 
 interface WeatherData {
@@ -43,12 +15,6 @@ interface WeatherData {
   description: string;
   city: string;
   icon: string;
-  humidity: number;
-  windSpeed: number;
-  windDirection: string;
-  uvIndex: number;
-  pressure: number;
-  visibility: number;
 }
 
 export default function Index() {
@@ -61,6 +27,7 @@ export default function Index() {
   const [error, setError] = useState<string | null>(null);
   const [currentCity, setCurrentCity] = useState("London"); // Default city
   const [locationLoading, setLocationLoading] = useState(false);
+  const [hasLocationPermission, setHasLocationPermission] = useState(false);
   
   const openHomeScreen = () => setShowHome(true);
   const closeHomeScreen = () => setShowHome(false);
@@ -77,8 +44,9 @@ export default function Index() {
     { uri: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=800' },
   ];
 
-  // Load weather data when app starts
+  // Check location permission on app start
   useEffect(() => {
+    checkLocationPermission().then(setHasLocationPermission);
     loadWeatherData(currentCity);
   }, []);
 
@@ -97,20 +65,22 @@ export default function Index() {
     }
   };
 
-  // NEW: Load weather data using coordinates
+  // Enhanced: Load weather data using coordinates with better error handling
   const loadWeatherByCoords = async (latitude: number, longitude: number) => {
     try {
       setLoading(true);
       setError(null);
-      // You'll need to modify fetchWeather to accept coordinates
-      // For now, let's get the city name and use that
+      
+      // Get address from coordinates
       const address = await reverseGeocode(latitude, longitude);
-      const cityName = address.city || address.subregion || address.region;
+      const cityName = address?.city || address?.subregion || address?.region || address?.name;
       
       if (cityName) {
         const data = await fetchWeather(cityName);
         setWeatherData(data);
         setCurrentCity(cityName);
+      } else {
+        throw new Error('Unable to determine city from location');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load weather data');
@@ -120,19 +90,37 @@ export default function Index() {
     }
   };
 
-  // NEW: Get current location weather
+  // Enhanced: Get current location weather with better feedback
   const getCurrentLocationWeather = async () => {
     try {
       setLocationLoading(true);
+      setError(null);
+      
       const coords = await getCurrentLocation();
       await loadWeatherByCoords(coords.latitude, coords.longitude);
+      
+      // Update permission status
+      setHasLocationPermission(true);
     } catch (error) {
       console.error('Location error:', error);
-      Alert.alert(
-        'Location Error', 
-        'Unable to get your location. Please make sure location services are enabled.',
-        [{ text: 'OK' }]
-      );
+      const errorMessage = error instanceof Error ? error.message : 'Unknown location error';
+      
+      if (errorMessage.includes('permission')) {
+        Alert.alert(
+          'Location Permission Required', 
+          'To get weather for your current location, please grant location permissions in your device settings.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Try Again', onPress: getCurrentLocationWeather }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Location Error', 
+          'Unable to get your location. Please make sure location services are enabled.',
+          [{ text: 'OK' }]
+        );
+      }
     } finally {
       setLocationLoading(false);
     }
@@ -157,11 +145,21 @@ export default function Index() {
     }
   };
 
-  // Handle search functionality
+  // Enhanced: Handle search functionality with better city suggestions
   const handleSearch = (city: string) => {
     if (city.trim()) {
       loadWeatherData(city.trim());
     }
+  };
+
+  // Enhanced: Better city suggestions based on popular weather locations
+  const getRandomCity = () => {
+    const cities = [
+      'London', 'New York', 'Tokyo', 'Paris', 'Sydney',
+      'Berlin', 'Toronto', 'Dubai', 'Singapore', 'Barcelona',
+      'Rome', 'Amsterdam', 'Stockholm', 'Copenhagen', 'Vienna'
+    ];
+    return cities[Math.floor(Math.random() * cities.length)];
   };
 
   const renderContent = () => (
@@ -184,10 +182,7 @@ export default function Index() {
             <TouchableOpacity 
               className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3 backdrop-blur-sm"
               onPress={() => {
-                // You can implement a search modal here or make this a TextInput
-                // For now, let's add some quick city options
-                const cities = ['London', 'New York', 'Tokyo', 'Paris', 'Sydney'];
-                const randomCity = cities[Math.floor(Math.random() * cities.length)];
+                const randomCity = getRandomCity();
                 handleSearch(randomCity);
               }}
             >
@@ -197,14 +192,16 @@ export default function Index() {
             </TouchableOpacity>
           </View>
 
-          {/* NEW: Location button */}
+          {/* Enhanced: Location button with better visual feedback */}
           <TouchableOpacity 
-            className="bg-white/10 border border-white/20 rounded-2xl p-3 backdrop-blur-sm active:scale-95 mr-2"
+            className={`border border-white/20 rounded-2xl p-3 backdrop-blur-sm active:scale-95 mr-2 ${
+              hasLocationPermission ? 'bg-green-500/20' : 'bg-white/10'
+            }`}
             onPress={getCurrentLocationWeather}
             disabled={locationLoading}
           >
             <Text className="text-white text-sm font-medium">
-              {locationLoading ? '📍...' : '📍'}
+              {locationLoading ? '📍...' : hasLocationPermission ? '📍✓' : '📍'}
             </Text>
           </TouchableOpacity>
 
