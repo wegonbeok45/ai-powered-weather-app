@@ -6,6 +6,7 @@ import AboutScreen from "./components/AboutScreen";
 import HomeScreen from "./components/HomeScreen";
 import SettingsPanel from "./components/SettingsPanel";
 import SupportScreen from "./components/SupportScreen";
+import UnitsScreen from "./components/UnitsScreen";
 import WeatherCard from "./components/WeatherCard";
 import WeatherStats from "./components/WeatherStats";
 import { ThemeContext } from "./context/ThemeContext";
@@ -25,12 +26,13 @@ interface WeatherData {
 }
 
 export default function Index() {
-  const { theme } = useContext(ThemeContext);
+  const { theme, units } = useContext(ThemeContext);
   const [backgroundIndex, setBackgroundIndex] = useState(0);
   const [showHome, setShowHome] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
+  const [showUnits, setShowUnits] = useState(false);
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [showWeatherStats, setShowWeatherStats] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -46,6 +48,8 @@ export default function Index() {
   const closeAboutScreen = () => setShowAbout(false);
   const openSupportScreen = () => setShowSupport(true);
   const closeSupportScreen = () => setShowSupport(false);
+  const openUnitsScreen = () => setShowUnits(true);
+  const closeUnitsScreen = () => setShowUnits(false);
 
   const backgrounds = [
     { uri: 'https://images.unsplash.com/photo-1419833479618-c595710e6711?w=800' },
@@ -59,13 +63,13 @@ export default function Index() {
 
   useEffect(() => {
     loadWeatherData(currentCity);
-  }, []);
+  }, [units]);
 
   const loadWeatherData = async (city: string) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchWeather(city);
+      const data = await fetchWeather(city, units);
       setWeatherData(data);
       setCurrentCity(city);
     } catch (err) {
@@ -91,6 +95,11 @@ export default function Index() {
       closeSettingsPanel();
       setTimeout(() => {
         openSupportScreen();
+      }, 300);
+    } else if (option === 'Units') {
+      closeSettingsPanel();
+      setTimeout(() => {
+        openUnitsScreen();
       }, 300);
     } else {
       closeSettingsPanel();
@@ -237,6 +246,10 @@ export default function Index() {
       <SupportScreen
         isVisible={showSupport}
         onClose={closeSupportScreen}
+      />
+      <UnitsScreen
+        isVisible={showUnits}
+        onClose={closeUnitsScreen}
       />
     </ImageBackground>
   );

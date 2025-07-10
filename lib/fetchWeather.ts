@@ -1,10 +1,10 @@
 // utils/fetchWeather.ts
 const API_KEY = 'b98c785f67dc6717cd38b6e888045398';
 
-export async function fetchWeather(city: string) {
+export async function fetchWeather(city: string, units: 'metric' | 'imperial') {
   // Get current weather data
   const weatherRes = await fetch(
-    `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
+    `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=${units}`
   );
 
   if (!weatherRes.ok) {
