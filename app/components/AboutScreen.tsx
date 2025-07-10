@@ -80,6 +80,14 @@ export default function AboutScreen({ isVisible, onClose }: AboutScreenProps) {
                   • Customizable settings
                 </Text>
               </View>
+
+              <View className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                <Text className="text-white dark:text-black text-lg font-semibold mb-2">Support</Text>
+                <Text className="text-gray-300 dark:text-gray-400 text-sm leading-relaxed">
+                  Email: mohamedtaherguenounou@gmail.com{'\n'}
+                  Phone: +216 53200087
+                </Text>
+              </View>
             </View>
 
             {/* Close Button */}
