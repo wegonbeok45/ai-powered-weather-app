@@ -2,9 +2,25 @@
 const API_KEY = 'b98c785f67dc6717cd38b6e888045398';
 
 export async function fetchWeather(city: string, units: 'metric' | 'imperial') {
-  // Get current weather data
+  // Get coordinates for the city
+  const geoRes = await fetch(
+    `http://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${API_KEY}`
+  );
+
+  if (!geoRes.ok) {
+    throw new Error('Failed to fetch coordinates for the city');
+  }
+
+  const geoData = await geoRes.json();
+  if (geoData.length === 0) {
+    throw new Error('City not found');
+  }
+
+  const { lat, lon } = geoData[0];
+
+  // Get weather data using coordinates
   const weatherRes = await fetch(
-    `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=${units}`
+    `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,daily,alerts&appid=${API_KEY}&units=${units}`
   );
 
   if (!weatherRes.ok) {
@@ -12,29 +28,18 @@ export async function fetchWeather(city: string, units: 'metric' | 'imperial') {
   }
 
   const weatherData = await weatherRes.json();
-  
-  // Get UV index using coordinates from the weather data
-  const uvRes = await fetch(
-    `https://api.openweathermap.org/data/2.5/uvi?lat=${weatherData.coord.lat}&lon=${weatherData.coord.lon}&appid=${API_KEY}`
-  );
-  
-  let uvIndex = null;
-  if (uvRes.ok) {
-    const uvData = await uvRes.json();
-    uvIndex = uvData.value;
-  }
 
   return {
-    temp: weatherData.main.temp,
-    description: weatherData.weather[0].description,
-    city: weatherData.name,
-    icon: weatherData.weather[0].icon,
-    humidity: weatherData.main.humidity,
-    windSpeed: weatherData.wind.speed,
-    windDirection: weatherData.wind.deg,
-    uvIndex: uvIndex,
-    feelsLike: weatherData.main.feels_like,
-    pressure: weatherData.main.pressure,
-    visibility: weatherData.visibility,
+    temp: weatherData.current.temp,
+    description: weatherData.current.weather[0].description,
+    city: geoData[0].name,
+    icon: weatherData.current.weather[0].icon,
+    humidity: weatherData.current.humidity,
+    windSpeed: weatherData.current.wind_speed,
+    windDirection: weatherData.current.wind_deg,
+    uvIndex: weatherData.current.uvi,
+    feelsLike: weatherData.current.feels_like,
+    pressure: weatherData.current.pressure,
+    visibility: weatherData.current.visibility,
   };
 }
