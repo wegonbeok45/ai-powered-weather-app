@@ -1,18 +1,24 @@
 import { useColorScheme } from 'nativewind';
-import { createContext, ReactNode, useState } from 'react';
+import { createContext, ReactNode, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark';
 type Units = 'metric' | 'imperial';
 
 interface ThemeContextProps {
-  theme: Theme;
+  theme: {
+    name: Theme;
+    backgroundColor: string;
+  };
   toggleTheme: () => void;
   units: Units;
   toggleUnits: () => void;
 }
 
 export const ThemeContext = createContext<ThemeContextProps>({
-  theme: 'light',
+  theme: {
+    name: 'light',
+    backgroundColor: '#ffffff',
+  },
   toggleTheme: () => {},
   units: 'metric',
   toggleUnits: () => {},
@@ -26,7 +32,16 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const { colorScheme, toggleColorScheme } = useColorScheme();
   const [units, setUnits] = useState<Units>('metric');
 
-  const theme = colorScheme === 'dark' ? 'dark' : 'light';
+  useEffect(() => {
+    if (colorScheme === 'light') {
+      toggleColorScheme();
+    }
+  }, []);
+
+  const theme = {
+    name: (colorScheme === 'dark' ? 'dark' : 'light') as Theme,
+    backgroundColor: colorScheme === 'dark' ? '#1a202c' : '#ffffff',
+  };
 
   const toggleUnits = () => {
     setUnits((prev) => (prev === 'metric' ? 'imperial' : 'metric'));

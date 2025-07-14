@@ -1,5 +1,5 @@
 // components/WeatherStats.tsx
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 interface WeatherData {
   temp: number;
@@ -74,25 +74,76 @@ export default function WeatherStats({ weatherData, loading }: WeatherStatsProps
   ];
 
   return (
-    <View className="w-full max-w-sm">
-      <View className="bg-white/5 dark:bg-black/5 border border-white/10 dark:border-black/10 rounded-2xl p-6 backdrop-blur-sm">
-        <Text className="text-white dark:text-black text-lg font-semibold mb-4">Weather Details</Text>
-        
+    <View style={styles.container}>
+      <View style={styles.card}>
+        <Text style={styles.header}>Weather Details</Text>
         {stats.map((stat, index) => (
-          <View key={index} className="mb-4 last:mb-0">
-            <View className="flex-row justify-between items-start">
-              <View className="flex-1">
-                <Text className="text-white/60 dark:text-black/60 text-sm mb-1">{stat.title}</Text>
-                <Text className="text-white dark:text-black text-base font-medium">{stat.value}</Text>
-                <Text className="text-white/40 dark:text-black/40 text-xs mt-1">{stat.subtitle}</Text>
+          <View key={index} style={[styles.statBlock, index === stats.length - 1 && { marginBottom: 0 }]}>
+            <View style={styles.statRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.statTitle}>{stat.title}</Text>
+                <Text style={styles.statValue}>{stat.value}</Text>
+                <Text style={styles.statSubtitle}>{stat.subtitle}</Text>
               </View>
             </View>
-            {index < stats.length - 1 && (
-              <View className="h-px bg-white/10 dark:bg-black/10 mt-4" />
-            )}
+            {index < stats.length - 1 && <View style={styles.divider} />}
           </View>
         ))}
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+  },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 20,
+    padding: 20,
+    marginVertical: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  header: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  statBlock: {
+    marginBottom: 16,
+  },
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  statTitle: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  statValue: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  statSubtitle: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginTop: 12,
+  },
+});

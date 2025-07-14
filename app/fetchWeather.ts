@@ -1,6 +1,5 @@
-// lib/fetchWeather.ts
+// fetchWeather.ts (moved from lib/fetchWeather.ts)
 const API_KEY = process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY;
-console.log('OpenWeather API KEY:', API_KEY);
 
 export async function fetchWeather(city: string, units: 'metric' | 'imperial') {
   // Get coordinates for the city

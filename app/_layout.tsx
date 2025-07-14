@@ -8,7 +8,7 @@ function AppLayout() {
   const { theme } = useContext(ThemeContext);
 
   return (
-    <View className={theme === 'dark' ? 'dark' : ''} style={{ flex: 1 }}>
+    <View className={theme.name === 'dark' ? 'dark' : ''} style={{ flex: 1 }}>
       <Stack screenOptions={{ headerShown: false }} />
     </View>
   );

@@ -1,7 +1,6 @@
 // Index.tsx (Main component)
 import { useContext, useEffect, useState } from "react";
-import { ImageBackground, LayoutAnimation, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { fetchWeather } from "../lib/fetchWeather";
+import { ImageBackground, LayoutAnimation, SafeAreaView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import AboutScreen from "./components/AboutScreen";
 import HomeScreen from "./components/HomeScreen";
 import SettingsPanel from "./components/SettingsPanel";
@@ -10,6 +9,7 @@ import UnitsScreen from "./components/UnitsScreen";
 import WeatherCard from "./components/WeatherCard";
 import WeatherStats from "./components/WeatherStats";
 import { ThemeContext } from "./context/ThemeContext";
+import { fetchWeather } from "./fetchWeather";
 
 interface WeatherData {
   temp: number;
@@ -185,13 +185,13 @@ export default function Index() {
               borderRadius: 16,
               padding: 12
             }}
-            onPress={openAboutScreen}
+            onPress={openSettingsPanel}
           >
             <Text style={{
               color: 'white',
               fontSize: 14,
               fontWeight: '500'
-            }}>About</Text>
+            }}>Menu</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -224,33 +224,35 @@ export default function Index() {
   );
 
   return (
-    <ImageBackground
-      source={backgrounds[backgroundIndex]}
-      style={{ flex: 1 }}
-      resizeMode="cover"
-    >
-      {renderContent()}
-      <SettingsPanel
-        isVisible={showSettings}
-        onClose={closeSettingsPanel}
-        onMenuSelect={handleMenuOption}
-      />
-      <AboutScreen
-        isVisible={showAbout}
-        onClose={closeAboutScreen}
-      />
-      <HomeScreen
-        isVisible={showHome}
-        onClose={closeHomeScreen}
-      />
-      <SupportScreen
-        isVisible={showSupport}
-        onClose={closeSupportScreen}
-      />
-      <UnitsScreen
-        isVisible={showUnits}
-        onClose={closeUnitsScreen}
-      />
-    </ImageBackground>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.backgroundColor }}>
+      <ImageBackground
+        source={backgrounds[backgroundIndex]}
+        style={{ flex: 1 }}
+        resizeMode="cover"
+      >
+        {renderContent()}
+        <SettingsPanel
+          isVisible={showSettings}
+          onClose={closeSettingsPanel}
+          onMenuSelect={handleMenuOption}
+        />
+        <AboutScreen
+          isVisible={showAbout}
+          onClose={closeAboutScreen}
+        />
+        <HomeScreen
+          isVisible={showHome}
+          onClose={closeHomeScreen}
+        />
+        <SupportScreen
+          isVisible={showSupport}
+          onClose={closeSupportScreen}
+        />
+        <UnitsScreen
+          isVisible={showUnits}
+          onClose={closeUnitsScreen}
+        />
+      </ImageBackground>
+    </SafeAreaView>
   );
 }
