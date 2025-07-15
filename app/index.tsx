@@ -2,7 +2,6 @@
 import * as Location from 'expo-location';
 import { useContext, useEffect, useState } from "react";
 import { Alert, ImageBackground, SafeAreaView, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { fetchWeather, fetchWeatherByCoords } from "../lib/fetchWeather";
 import AboutScreen from "./components/AboutScreen";
 import HomeScreen from "./components/HomeScreen";
 import Modal from './components/Modal';
@@ -12,6 +11,7 @@ import UnitsScreen from "./components/UnitsScreen";
 import WeatherCard from "./components/WeatherCard";
 import WeatherStats from "./components/WeatherStats";
 import { ThemeContext } from "./context/ThemeContext";
+import { fetchWeather, fetchWeatherByCoords } from "./fetchWeather";
 
 
 interface WeatherData {
