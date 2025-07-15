@@ -1,20 +1,24 @@
 // Index.tsx (Main component)
+import * as Location from 'expo-location';
 import { useContext, useEffect, useState } from "react";
-import { ImageBackground, LayoutAnimation, SafeAreaView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, ImageBackground, SafeAreaView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { fetchWeather, fetchWeatherByCoords } from "../lib/fetchWeather";
 import AboutScreen from "./components/AboutScreen";
 import HomeScreen from "./components/HomeScreen";
+import Modal from './components/Modal';
 import SettingsPanel from "./components/SettingsPanel";
 import SupportScreen from "./components/SupportScreen";
 import UnitsScreen from "./components/UnitsScreen";
 import WeatherCard from "./components/WeatherCard";
 import WeatherStats from "./components/WeatherStats";
 import { ThemeContext } from "./context/ThemeContext";
-import { fetchWeather } from "./fetchWeather";
+
 
 interface WeatherData {
   temp: number;
   description: string;
   city: string;
+  country: string;
   icon: string;
   humidity: number;
   windSpeed: number;
@@ -62,7 +66,7 @@ export default function Index() {
   ];
 
   useEffect(() => {
-    loadWeatherData(currentCity);
+    fetchWeatherByLocation();
   }, [units]);
 
   const loadWeatherData = async (city: string) => {
@@ -72,6 +76,29 @@ export default function Index() {
       const data = await fetchWeather(city, units);
       setWeatherData(data);
       setCurrentCity(city);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load weather data');
+      console.error('Weather fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchWeatherByLocation = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setError('Permission to access location was denied');
+        Alert.alert('Permission denied', 'Permission to access location was denied');
+        setLoading(false);
+        return;
+      }
+      const location = await Location.getCurrentPositionAsync({});
+      const data = await fetchWeatherByCoords(location.coords.latitude, location.coords.longitude, units);
+      setWeatherData(data);
+      setCurrentCity(data.city);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load weather data');
       console.error('Weather fetch error:', err);
@@ -113,7 +140,6 @@ export default function Index() {
   };
 
   const toggleWeatherStats = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setShowWeatherStats(!showWeatherStats);
   };
 
@@ -121,77 +147,45 @@ export default function Index() {
     <View style={{ flex: 1, backgroundColor: 'transparent' }}>
 
       {/* Header */}
-      <View style={{ paddingTop: 48, paddingBottom: 24, paddingHorizontal: 24 }}>
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
+      <View className="pt-12 pb-6 px-6">
+        <View className="flex-row items-center justify-between">
           <TouchableOpacity
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderWidth: 1,
-              borderColor: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: 16,
-              padding: 12
-            }}
+            className="bg-secondary/50 border border-secondary/70 rounded-lg p-3"
             onPress={openSettingsPanel}
           >
-            <Text style={{
-              color: 'white',
-              fontSize: 14,
-              fontWeight: '500'
-            }}>Menu</Text>
+            <Text className="text-textPrimary text-xl">☰</Text>
           </TouchableOpacity>
 
-          <View style={{ flex: 1, marginHorizontal: 16 }}>
-            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+          <View className="flex-1 mx-4">
+            <View className="flex-row items-center bg-secondary/50 border border-secondary/70 rounded-lg">
               <TextInput
-                style={{
-                  flex: 1,
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  borderWidth: 1,
-                  borderColor: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: 16,
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  color: 'white',
-                  marginRight: 8,
-                }}
+                className="flex-1 text-textPrimary font-sans px-4 py-3"
                 placeholder="Search location..."
-                placeholderTextColor="rgba(156, 163, 175, 1)"
+                placeholderTextColor="#778DA9"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 onSubmitEditing={() => handleSearch(searchQuery)}
+                autoCorrect={true}
               />
               <TouchableOpacity
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: 16,
-                  padding: 12,
-                }}
+                className="p-3"
                 onPress={() => handleSearch(searchQuery)}
               >
-                <Text style={{ color: 'white', fontSize: 14, fontWeight: '500' }}>Search</Text>
+                <Text className="text-textPrimary font-mono">Search</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           <TouchableOpacity
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderWidth: 1,
-              borderColor: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: 16,
-              padding: 12
+            className="bg-secondary/50 border border-secondary/70 rounded-lg p-3"
+            onPress={() => {
+              closeSettingsPanel();
+              setTimeout(() => {
+                openAboutScreen();
+              }, 300);
             }}
-            onPress={openSettingsPanel}
           >
-            <Text style={{
-              color: 'white',
-              fontSize: 14,
-              fontWeight: '500'
-            }}>Menu</Text>
+            <Text className="text-textPrimary font-mono">About</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -212,7 +206,9 @@ export default function Index() {
           onToggleStats={toggleWeatherStats}
           statsVisible={showWeatherStats}
         />
-        {showWeatherStats && <WeatherStats weatherData={weatherData} loading={loading} />}
+        <Modal isVisible={showWeatherStats} onClose={toggleWeatherStats}>
+          <WeatherStats weatherData={weatherData} loading={loading} onClose={toggleWeatherStats} />
+        </Modal>
       </View>
 
       <View style={{

@@ -5,7 +5,20 @@ module.exports = {
   darkMode: "class",
   presets: [require("nativewind/preset")],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        background: '#0D1B2A',
+        primary: '#1B263B',
+        secondary: '#415A77',
+        accent: '#778DA9',
+        textPrimary: '#E0E1DD',
+        textSecondary: '#BCC2C7',
+      },
+      fontFamily: {
+        sans: ['System', 'sans-serif'],
+        mono: ['SpaceMono', 'monospace'],
+      },
+    },
   },
   plugins: [],
 }
